@@ -18,10 +18,11 @@ from rich.table import Table
 from rich.text import Text
 
 from apexbench.cache import PredictionRecord
-from apexbench.jev import InferenceBudget
+from apexbench.inference import InferenceBudget
 from apexbench.models import GameState, ObservationMode
 from apexbench.playback_session import PlaybackSession, PlaybackSnapshot
 from apexbench.prediction import PredictionService, latest_before
+from apexbench.providers import is_jev
 
 CONTROLS = "Space/p pause · c retry · n/l next · b/h back · r restart · +/- speed · q quit"
 
@@ -78,8 +79,12 @@ def frame(
         summary.append(f"\n{_request_usage(budget)}")
     if record:
         forecast = record.forecast
+        model_label = "Jev" if is_jev(record.requested_model) else record.requested_model
         prediction = Table(
-            title=(f"Jev @ {record.timestamp:g}s (age {state.timestamp - record.timestamp:.2f}s)"),
+            title=Text(
+                f"{model_label} @ {record.timestamp:g}s "
+                f"(age {state.timestamp - record.timestamp:.2f}s)"
+            ),
             expand=True,
             box=None if compact else box.HEAVY_HEAD,
         )

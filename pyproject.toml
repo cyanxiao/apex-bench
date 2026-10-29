@@ -1,7 +1,7 @@
 [project]
 name = "apexbench"
 version = "0.1.0"
-description = "ApexBench: probabilistic Apex Legends placement benchmarking with Jev"
+description = "ApexBench: probabilistic Apex Legends placement benchmarking with OpenRouter models"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"

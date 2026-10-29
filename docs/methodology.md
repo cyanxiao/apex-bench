@@ -42,7 +42,7 @@ Retrospective respawn annotations and inventory are excluded.
 Prediction inputs omit final placement, winner, cumulative summary statistics,
 summary counters, match ID, date/header, exact duration/end time, fetch time,
 and future ring phases. Record provenance can retain match identifiers outside
-the request sent to Jev.
+the request sent to the model.
 
 Aggregated fight windows are parsed but excluded because their endpoints and
 participants can depend on future events. POI polygons are inspectable but are
@@ -81,8 +81,12 @@ record and cache formats.
   that every required team has a prediction, not that every game-state field is known.
 - Raw events and derived timeline summaries may disagree. The reconstruction policy
   above defines which source supplies each observation.
-- Placement probabilities describe Jev's forecasts; they are not a guarantee of
+- Placement probabilities describe the selected model's forecasts; they are not a guarantee of
   calibrated uncertainty for competitive Apex Legends.
+- Jev returns native Decisions probabilities. Chat models generate probability
+  estimates under a JSON Schema using the same observations and forecasting
+  instruction. These are different inference methods; record the model and adapter
+  when comparing their scores. ApexBench never silently normalizes either output.
 
 Record the replay, model version, observation mode, checkpoint schedule, and
 prediction export when comparing experiments.

@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from apexbench.cache import PredictionRecord
-from apexbench.jev import PredictionError
+from apexbench.inference import PredictionError
 from apexbench.models import GameState, ObservationMode, TeamState
 from apexbench.prediction import PredictionService, checkpoints
 from apexbench.state import reconstruct

@@ -1,8 +1,9 @@
 # ApexBench
 
 ApexBench is an open-source benchmark for predicting team placements in competitive
-Apex Legends. Load a historical ALGS replay, get forecasts from Jev through
-OpenRouter, and compare them with the match results.
+Apex Legends. Load a historical ALGS replay, get forecasts from Jev, GPT, Claude,
+Gemini, DeepSeek, or other compatible models through OpenRouter, and compare them
+with the match results.
 
 Watch forecasts change during terminal playback, follow a single squad or a top-N
 leaderboard, and export results for your own experiments.
@@ -39,6 +40,26 @@ uv run apexbench predict "$REPLAY" --team "$TEAM" --at 60
 Successful predictions are cached, so repeating the same request does not make
 another API call. Inspection, state reconstruction, cached playback, and evaluation
 work without a key.
+
+## Choose a model
+
+Jev remains the default. Select another model with `--model`:
+
+```sh
+uv run apexbench models
+uv run apexbench predict "$REPLAY" --team "$TEAM" --at 60 \
+  --model openai/gpt-4.1-mini
+uv run apexbench predict "$REPLAY" --team "$TEAM" --at 60 \
+  --model anthropic/claude-sonnet-4.5
+uv run apexbench predict "$REPLAY" --team "$TEAM" --at 60 \
+  --model google/gemini-2.5-flash
+```
+
+Other OpenRouter chat model IDs are accepted when they support
+[JSON Schema structured outputs](https://openrouter.ai/docs/guides/features/structured-outputs).
+All models use the same `OPENROUTER_API_KEY`. Pass the same `--model` when running
+`predict`, `precompute`, `replay`, and `evaluate`; each model has its own cached forecasts.
+See the [usage guide](docs/usage.md#choose-a-model) for more examples and requirements.
 
 ## Watch a match
 
@@ -80,7 +101,8 @@ If a run reaches its budget, cached progress is preserved for the next run.
 | --- | --- |
 | `inspect` | Explore replay metadata, teams, and available fields. |
 | `state` | View a team's observations at a chosen match time. |
-| `predict` | Get or reuse a Jev placement forecast. |
+| `models` | List example model IDs. |
+| `predict` | Get or reuse a placement forecast from the selected model. |
 | `replay` | Watch a match with forecasts in the terminal. |
 | `precompute` | Build a cache of forecasts at regular intervals. |
 | `evaluate` | Score predictions and export benchmark results. |
@@ -92,11 +114,11 @@ Run `uv run apexbench COMMAND --help` for command-specific options.
 - [Usage guide](docs/usage.md) — commands, playback controls, budgets, and troubleshooting.
 - [Replay format](docs/replay-format.md) — JSON sections, fields, timestamps, and examples.
 - [Methodology](docs/methodology.md) — observation modes, forecasting inputs, and scoring.
-- [Architecture](docs/architecture.md) — parser, Jev integration, caching, and export formats.
+- [Architecture](docs/architecture.md) — parser, model adapters, caching, and export formats.
 - [Contributing](docs/development.md) — development setup, tests, and project structure.
 
-Version 0.1 supports local replay JSON and Jev. See the methodology notes for the
-scope and limitations of the benchmark.
+Version 0.1 supports local replay JSON and OpenRouter model inference. See the
+methodology notes for the scope and limitations of the benchmark.
 
 ## Contributing
 

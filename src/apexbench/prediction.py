@@ -5,15 +5,15 @@ from __future__ import annotations
 import math
 
 from apexbench.cache import PredictionCache, PredictionRecord, cache_key
-from apexbench.jev import (
+from apexbench.inference import (
     PROMPT_VERSION,
     BudgetExceeded,
     InferenceBudget,
     PlacementProvider,
     PredictionError,
-    build_request,
 )
 from apexbench.models import ObservationMode
+from apexbench.providers import build_request
 from apexbench.replay import Replay
 from apexbench.state import reconstruct
 

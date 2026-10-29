@@ -114,5 +114,5 @@ class Replay:
                 "pois": [p.name for p in self.data.pois.payload.polygons],
             },
             "warnings": self.warnings,
-            "notice": "Inspection includes final results. It is never sent to Jev.",
+            "notice": "Inspection includes final results. It is never sent to a prediction model.",
         }

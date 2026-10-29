@@ -49,6 +49,8 @@ The default tests use the small replay fixture in `tests/fixtures/replay.json`
 and mocked HTTP responses. They do not require an OpenRouter key or paid API calls.
 Coverage includes reconstruction boundaries, respawn state, future-information
 exclusion, provider validation, caching, budgets, exports, and terminal controls.
+Chat adapter tests cover the example model families, structured-output validation,
+refusals, model mismatches, cache separation, and CLI benchmark workflows.
 CI checks Python 3.12 and 3.13.
 
 Optional full-replay integration tests can be enabled with:

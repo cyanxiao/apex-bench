@@ -9,8 +9,9 @@ from typing import Any, Literal
 
 from pydantic import Field, model_validator
 
-from apexbench.jev import PROMPT_VERSION, ProviderResult, digest, parse_response
+from apexbench.inference import PROMPT_VERSION, ProviderResult, digest
 from apexbench.models import Forecast, GameState, ObservationMode, SafeModel
+from apexbench.providers import is_jev, parse_response
 
 
 def cache_key(replay_sha256: str, request: dict, prompt_version: str = PROMPT_VERSION) -> str:
@@ -50,7 +51,8 @@ class PredictionRecord(SafeModel):
             raise ValueError("prediction cache key does not match its contents")
         parsed = parse_response(self.response, self.request)
         if self.forecast != parsed.forecast or self.resolved_model != parsed.resolved_model:
-            raise ValueError("forecast does not match its raw Jev response")
+            source = "Jev" if is_jev(self.requested_model) else "chat completion"
+            raise ValueError(f"forecast does not match its raw {source} response")
         return self
 
     @classmethod

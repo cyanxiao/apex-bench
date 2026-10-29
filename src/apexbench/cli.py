@@ -22,15 +22,17 @@ from apexbench.evaluation import (
     evaluate as evaluate_records,
 )
 from apexbench.evaluation import export_evaluation, export_predictions, import_predictions
-from apexbench.jev import DEFAULT_MODEL, InferenceBudget, JevProvider
+from apexbench.inference import DEFAULT_MODEL, InferenceBudget
+from apexbench.jev import JevProvider
 from apexbench.playback import play
 from apexbench.prediction import PredictionService, checkpoints
+from apexbench.providers import MODEL_EXAMPLES, OpenRouterChatProvider, is_jev, validate_model
 from apexbench.replay import Replay
 from apexbench.state import reconstruct
 
 app = typer.Typer(
     name="apexbench",
-    help="ApexBench — Apex Legends placement benchmarking with Jev.",
+    help="ApexBench — Apex Legends placement benchmarking with OpenRouter models.",
     no_args_is_help=True,
     invoke_without_command=True,
     pretty_exceptions_enable=False,
@@ -48,7 +50,9 @@ TeamOption = Annotated[str, typer.Option("--team", "-t", help="Team name or nume
 CacheOption = Annotated[
     Path, typer.Option("--cache", envvar="APEXBENCH_CACHE", help="SQLite prediction cache.")
 ]
-ModelOption = Annotated[str, typer.Option("--model", help="Pinned Jev model ID; Jev only in v0.1.")]
+ModelOption = Annotated[
+    str, typer.Option("--model", help="OpenRouter model ID; see apexbench models for examples.")
+]
 OutputOption = Annotated[Path | None, typer.Option("--output", "-o", help="Export file path.")]
 DEFAULT_CACHE = Path(".apexbench/predictions.sqlite3")
 
@@ -106,10 +110,12 @@ def service_for(
     max_input_bytes: int,
     timeout: float = 30,
 ) -> PredictionService:
+    validate_model(model)
+    provider = JevProvider if is_jev(model) else OpenRouterChatProvider
     return PredictionService(
         replay,
         cache,
-        JevProvider(
+        provider(
             os.getenv("OPENROUTER_API_KEY"),
             model,
             timeout=timeout,
@@ -128,6 +134,19 @@ def root(version: Annotated[bool, typer.Option("--version", is_eager=True)] = Fa
     if version:
         typer.echo(f"ApexBench {__version__}")
         raise typer.Exit()
+
+
+@app.command()
+def models():
+    """List example model IDs; other structured-output OpenRouter models are accepted."""
+    table = Table("Model ID", "Description")
+    for model, description in MODEL_EXAMPLES.items():
+        table.add_row(model, description)
+    console.print(table)
+    console.print(
+        "Examples, not a live availability list. Chat models must support JSON Schema outputs. "
+        "Use --model with predict, precompute, replay, and evaluate."
+    )
 
 
 @app.command("inspect")
@@ -185,7 +204,7 @@ def predict(
     output: OutputOption = None,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ):
-    """Obtain a validated Jev distribution; reuse the exact cached request first."""
+    """Obtain a validated placement distribution; reuse the exact cached request first."""
     if output and output.suffix.lower() not in (".json", ".jsonl"):
         raise ValueError("prediction export must end in .json or .jsonl")
     replay = Replay.load(replay_file)
@@ -200,7 +219,7 @@ def predict(
             console.print(
                 Text(
                     f"ApexBench | {replay.team(team).team_name} @ {record.timestamp:g}s | "
-                    f"{record.observation_mode} | {'cache hit' if hit else 'new Jev prediction'}"
+                    f"{record.observation_mode} | {'cache hit' if hit else 'new prediction'}"
                 )
             )
             table = Table("Placement", "Probability")
@@ -230,7 +249,8 @@ def precompute(
 ):
     """Generate interval forecasts with resumable caching and a strict request budget."""
     from apexbench.cache import cache_key
-    from apexbench.jev import BudgetExceeded, build_request, canonical
+    from apexbench.inference import BudgetExceeded, api_request, canonical
+    from apexbench.providers import build_request
 
     if output and output.suffix.lower() not in (".json", ".jsonl"):
         raise ValueError("prediction export must end in .json or .jsonl")
@@ -250,7 +270,9 @@ def precompute(
                 continue
             request = build_request(snapshot, model)
             key = cache_key(replay.fingerprint, request)
-            planned.append((timestamp, storage.get(key), len(canonical(request).encode())))
+            planned.append(
+                (timestamp, storage.get(key), len(canonical(api_request(request)).encode()))
+            )
         misses = sum(record is None for _, record, _ in planned)
         console.print(
             f"ApexBench: {len(planned)} eligible checkpoints, "
@@ -271,7 +293,7 @@ def precompute(
             try:
                 record, _ = service.predict(team, timestamp, mode.value)
                 records.append(record)
-                console.print(f"Cached Jev forecast @ {timestamp:g}s")
+                console.print(Text(f"Cached {record.requested_model} forecast @ {timestamp:g}s"))
             except BudgetExceeded as exc:
                 console.print(Text(str(exc) + "; progress saved. Rerun to resume.", style="yellow"))
                 stopped = True
@@ -356,7 +378,8 @@ def evaluate(
     output: OutputOption = None,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ):
-    """Score cached or exported forecasts against final placement; never calls Jev."""
+    """Score cached or exported forecasts against final placement; never calls an API."""
+    validate_model(model)
     source = Replay.load(replay_file)
     team_id = source.team(team).team_id
     if predictions:

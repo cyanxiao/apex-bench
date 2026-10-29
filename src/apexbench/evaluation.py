@@ -9,8 +9,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from apexbench.cache import PredictionRecord, cache_key
-from apexbench.jev import PROMPT_VERSION, build_request
+from apexbench.inference import PROMPT_VERSION
 from apexbench.models import Forecast
+from apexbench.providers import build_request
 from apexbench.replay import Replay
 from apexbench.state import reconstruct
 

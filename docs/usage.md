@@ -40,8 +40,54 @@ uv run apexbench predict "$REPLAY" --team "$TEAM" --at 60 --cache-only
 ApexBench reads `OPENROUTER_API_KEY` from its process environment. It does not load
 `.env` files automatically. Cached forecasts work without a key.
 
-The default model is `typesafe/jev-1.13`. Use `--model` to select another pinned
-Jev version. Version 0.1 accepts Jev models only and excludes router/latest aliases.
+## Choose a model
+
+The default remains `typesafe/jev-1.13`, using the native Decisions API. Other
+models use OpenRouter's chat completions API with strict JSON Schema output.
+No additional SDK or provider-specific key is needed.
+
+```sh
+uv run apexbench models
+uv run apexbench predict "$REPLAY" --team "$TEAM" --at 60 \
+  --model openai/gpt-4.1-mini
+```
+
+Example model IDs:
+
+| Family | OpenRouter model ID |
+| --- | --- |
+| Jev | `typesafe/jev-1.13` |
+| GPT | `openai/gpt-4.1-mini` |
+| Claude | `anthropic/claude-sonnet-4.5` |
+| Gemini | `google/gemini-2.5-flash` |
+| DeepSeek | `deepseek/deepseek-chat-v3.1` |
+| Qwen | `qwen/qwen3-235b-a22b-2507` |
+
+This is an example list, not a live availability check or an allowlist. Other
+explicit `vendor/model` IDs and routing variants such as `:free` are accepted.
+Check current availability and `structured_outputs` support in the
+[OpenRouter model catalog](https://openrouter.ai/models?supported_parameters=structured_outputs).
+Chat requests require supported parameters and disable provider fallbacks. A model
+without a compatible provider fails explicitly; ApexBench does not retry with a
+different model or a weaker output format. Automatic routers such as
+`openrouter/auto` are rejected. Jev IDs still require pinned versions.
+
+Pass the same `--model` through the whole workflow:
+
+```sh
+MODEL=google/gemini-2.5-flash
+uv run apexbench precompute "$REPLAY" --team "$TEAM" --model "$MODEL" \
+  --interval 60 --max-requests 20 --output exports/gemini-predictions.jsonl
+uv run apexbench replay "$REPLAY" --team "$TEAM" --model "$MODEL" --step 60
+uv run apexbench evaluate "$REPLAY" --team "$TEAM" --model "$MODEL" \
+  --predictions exports/gemini-predictions.jsonl --output exports/gemini-evaluation.json
+```
+
+Caches and evaluation selection are separate for each requested model. Existing
+Jev cache entries and exports continue to work. Requested and resolved model IDs
+are preserved in every prediction record; use dated model IDs where available for
+reproducible experiments. Model aliases may change upstream over time, while an
+existing cache hit continues to return the original saved forecast.
 
 ## Terminal replay
 
@@ -79,7 +125,7 @@ All active teams need forecasts to determine a complete ranking.
 | `--max-input-bytes` | Maximum serialized request size; defaults to 32,000 bytes. |
 | `--mode` | `team` or `oracle`; defaults to `team`. |
 | `--cache` | SQLite cache path; defaults to `.apexbench/predictions.sqlite3`. |
-| `--model` | Pinned Jev model version. |
+| `--model` | OpenRouter model ID; defaults to `typesafe/jev-1.13`. |
 | `--plain` | Print checkpoints without waiting or terminal controls. |
 
 `APEXBENCH_CACHE` also sets the cache path. Use the same cache, model, and observation
@@ -167,6 +213,8 @@ Provider usage/cost is retained in successful prediction records.
 | Request exceeds the input limit | Adjust `--max-input-bytes` if appropriate for the experiment. |
 | Provider response fails validation | Read the specific error and retry with `c`. Repeated failures remain stopped. |
 | OpenRouter returns an HTTP error | Check access, model availability, credits, or rate limits before retrying. |
+| Chat model does not support the requested schema | Select a model/provider with structured-output support. |
+| Chat response is truncated, refused, or invalid | The attempt is counted and no forecast is cached. Inspect diagnostics before retrying. |
 
 Validation failures identify the team, checkpoint, and check that failed. The CLI
 saves the request and response text under `diagnostics/` beside the cache and
