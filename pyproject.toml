@@ -1,0 +1,61 @@
+[project]
+name = "apexbench"
+version = "0.1.0"
+description = "ApexBench: probabilistic Apex Legends placement benchmarking with Jev"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+dependencies = ["typer>=0.16,<1", "rich>=14,<15", "pydantic>=2.11,<3", "httpx>=0.28,<1"]
+
+[project.scripts]
+apexbench = "apexbench.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+exclude = [
+  "**/.env", "**/.env.*", "**/.netrc", "**/.pypirc",
+  "**/*.pem", "**/*.key", "**/*.p12", "**/*.pfx",
+  "**/diagnostics/**", "**/__pycache__/**", "**/*.py[cod]",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src/apexbench/*.py",
+  "/tests/*.py",
+  "/tests/fixtures/replay.json",
+  "/docs/usage.md",
+  "/docs/replay-format.md",
+  "/docs/methodology.md",
+  "/docs/architecture.md",
+  "/docs/development.md",
+  "/examples/benchmark.sh",
+  "/.github/workflows/test.yml",
+  "/.gitignore",
+  "/.python-version",
+  "/pyproject.toml",
+  "/uv.lock",
+  "/README.md",
+  "/LICENSE",
+  "/NOTICE",
+]
+
+[tool.hatch.build.targets.wheel]
+include = ["/src/apexbench/*.py"]
+sources = ["src"]
+
+[dependency-groups]
+dev = ["pytest>=8.3,<10", "ruff>=0.11,<1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

@@ -1,0 +1,33 @@
+# Python environments and build products
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+
+# Local credentials; only a placeholder template may be committed
+.env
+.env.*
+!.env.example
+.netrc
+.pypirc
+.aws/
+.ssh/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local match data, API diagnostics, and generated results
+.apexbench/
+*.sqlite3*
+data/
+exports/
+diagnostics/
+logs/
+*.log
+/*.json
+/*.jsonl
+/*.csv
+.DS_Store
