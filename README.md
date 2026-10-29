@@ -1,5 +1,7 @@
 # ApexBench
 
+https://github.com/user-attachments/assets/8cc109f9-d807-4497-bf08-6c24cae93bd9
+
 ApexBench is an open-source benchmark for predicting team placements in competitive
 Apex Legends. Load a historical ALGS replay, get forecasts from Jev, GPT, Claude,
 Gemini, DeepSeek, or other compatible models through OpenRouter, and compare them
